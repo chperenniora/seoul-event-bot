@@ -1,16 +1,15 @@
-name: 서울행사 자동수집
+name: 서울 행사 자동 수집
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 * * * *'
-  workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   collect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # ← 로봇한테 강제로 쓰기 권한을 주는 마법의 줄이에요!
     steps:
       - name: 코드 가져오기
         uses: actions/checkout@v4
@@ -26,10 +25,10 @@ jobs:
           NAVER_SECRET: ${{ secrets.NAVER_SECRET }}
         run: python collect.py
 
-      - name: 결과 저장
+      - name: 결과 저장 (강제 푸시)
         run: |
           git config user.name "bot"
           git config user.email "bot@users.noreply.github.com"
-          git add -A
+          git add events.json
           git commit -m "행사 자동 업데이트" || echo "변경 없음"
-          git push
+          git push origin HEAD:main
