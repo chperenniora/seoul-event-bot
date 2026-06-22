@@ -1,0 +1,573 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ink:#07070B; --panel:rgba(255,255,255,.035); --panel2:rgba(255,255,255,.06);
+    --line:rgba(255,255,255,.10); --fg:#F3F1EA; --muted:#9A96A6; --amber:#F2D98E;
+    --c-exhibit:#FF6F45; --c-show:#7C97FF; --c-party:#FF5BA8; --c-gallery:#3FCBAC;
+    --mono:"SF Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+    --sans:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Helvetica Neue",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--ink);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased;line-height:1.5;font-size:16px}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(60% 40% at 8% 0%, rgba(255,91,168,.16), transparent 60%),
+      radial-gradient(55% 38% at 95% 6%, rgba(124,151,255,.16), transparent 60%),
+      radial-gradient(50% 45% at 50% 100%, rgba(63,203,172,.12), transparent 60%),
+      radial-gradient(40% 30% at 80% 90%, rgba(255,111,69,.10), transparent 60%);}
+  .wrap{max-width:940px;margin:0 auto;padding:26px 16px 70px}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:18px}
+  .mark{display:flex;flex-direction:column;gap:3px}
+  .mark .latin{font-family:var(--mono);font-size:12.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted)}
+  .mark h1{font-size:33px;font-weight:800;letter-spacing:-.02em;line-height:1.04;
+    background:linear-gradient(100deg,#fff,#F2D98E 25%,#fff 50%,#F2D98E 75%,#fff);background-size:220% auto;
+    -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 28px rgba(242,217,142,.12)}
+  .mark .date{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:5px}
+  .live{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+  .updbtn{font-family:var(--mono);font-size:13.5px;letter-spacing:.04em;color:var(--fg);background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;padding:11px 18px;cursor:pointer;display:flex;align-items:center;gap:9px;
+    transition:border-color .15s,box-shadow .15s;backdrop-filter:blur(8px)}
+  .updbtn:hover{border-color:var(--amber);box-shadow:0 0 22px rgba(242,217,142,.22)}
+  .updbtn:disabled{opacity:.55;cursor:wait}
+  .updbtn .dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+  .updbtn.spin .dot{animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
+  .status{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:15px;text-align:right}
+  .status.err{color:var(--c-exhibit)} .status.ok{color:var(--c-gallery)}
+  .controls{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:22px 0 18px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:14px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;
+    padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s;backdrop-filter:blur(6px)}
+  .chip .sw{width:9px;height:9px;border-radius:3px}
+  .chip[data-on="1"]{color:#fff;border-color:transparent;box-shadow:0 0 16px rgba(255,255,255,.06)}
+  .chip[data-on="1"][data-k="all"]{background:rgba(255,255,255,.16)}
+  .views{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);backdrop-filter:blur(6px)}
+  .views button{font-family:var(--mono);font-size:13px;letter-spacing:.05em;text-transform:uppercase;background:transparent;
+    color:var(--muted);border:0;padding:10px 15px;cursor:pointer;transition:.15s}
+  .views button[data-on="1"]{background:var(--panel2);color:var(--fg)}
+  .kindbar{display:flex;gap:7px;flex-wrap:wrap;margin:2px 0 12px}
+  .kindbar button{font-family:var(--mono);font-size:12.5px;letter-spacing:.03em;color:var(--muted);background:var(--panel);
+    border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer;transition:.15s;backdrop-filter:blur(6px)}
+  .kindbar button[data-on="1"]{color:#fff;background:var(--panel2);border-color:rgba(255,255,255,.28)}
+  .dirnote{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+  .feednote{font-size:12.5px;color:var(--fg);background:rgba(185,140,255,.08);border:1px solid rgba(185,140,255,.35);border-radius:10px;padding:10px 13px;margin:0 0 14px;line-height:1.5}
+  .fgroup{margin:18px 0 8px;font-size:15px;font-weight:800;color:var(--amber);display:flex;align-items:center;gap:8px}
+  .fgroup .cnt{font-size:12px;color:var(--muted);font-weight:600}
+  .fcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px}
+  .fcard h4{margin:0 0 6px;font-size:15px;line-height:1.35}
+  .fcard .fdesc{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:9px}
+  .fcard .fbot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .fcard .fdate{font-size:11.5px;color:var(--muted)}
+  .fcard .flink{font-size:12.5px;color:var(--amber);text-decoration:none;border:1px solid rgba(217,180,90,.4);border-radius:8px;padding:5px 11px;white-space:nowrap}
+  .fcard .flink:active{background:rgba(217,180,90,.12)}
+  .fkw{display:inline-block;font-size:11px;font-weight:700;color:#0c0c10;background:var(--amber);border-radius:6px;padding:2px 7px;margin-right:6px;vertical-align:middle}
+  .cbanner{font-size:12.5px;color:var(--fg);background:rgba(242,217,142,.08);border:1px solid rgba(242,217,142,.35);border-radius:10px;padding:10px 13px;margin:0 0 16px;line-height:1.5}
+  .cbanner b{color:var(--amber)}
+  .group-label{font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    margin:24px 0 13px;display:flex;align-items:center;gap:12px}
+  .group-label::after{content:"";flex:1;height:1px;background:var(--line)}
+  .group-label .gbar{width:11px;height:11px;border-radius:3px}
+  .ev{display:grid;grid-template-columns:74px 1fr;gap:16px;padding:15px 0;border-bottom:1px solid var(--line);position:relative}
+  .ev.past{opacity:.6}
+  .ev .tape{position:absolute;left:0;top:15px;bottom:15px;width:4px;border-radius:3px;box-shadow:0 0 12px currentColor}
+  .ev .when{font-family:var(--mono);font-size:13px;color:var(--muted);padding-left:16px;padding-top:2px}
+  .ev .when b{display:block;color:var(--fg);font-size:16.5px;font-weight:700}
+  .ev .body h3{font-size:18.5px;font-weight:700;letter-spacing:-.01em}
+  .ev .meta{font-size:14.5px;color:var(--muted);margin-top:4px}
+  .ev .tags{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;align-items:center}
+  .pill{font-family:var(--mono);font-size:12px;letter-spacing:.04em;padding:4px 9px;border-radius:5px;color:#0a0a0c;font-weight:700}
+  .pill.area{background:var(--panel2);color:var(--muted);font-weight:500}
+  .pill.now{background:var(--amber);color:#0a0a0c;box-shadow:0 0 14px rgba(242,217,142,.4)}
+  .pill.new{background:#3FCBAC;color:#0a0a0c;box-shadow:0 0 12px rgba(63,203,172,.5)}
+  .autobtn{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;transition:.15s}
+  .autobtn[data-on="1"]{color:#0a0a0c;background:var(--amber);border-color:transparent;box-shadow:0 0 14px rgba(242,217,142,.35)}
+  .pill.done{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .note{font-size:14px;color:var(--muted);margin-top:6px;font-style:italic}
+  .calhead{display:flex;align-items:center;justify-content:center;gap:20px;margin:8px 0 16px}
+  .calhead button{background:var(--panel);border:1px solid var(--line);color:var(--fg);width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px;backdrop-filter:blur(6px)}
+  .calhead .m{font-family:var(--mono);font-size:17px;letter-spacing:.06em;min-width:150px;text-align:center}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .dow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--muted);text-align:center;padding:5px 0}
+  .cell{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:74px;padding:7px 6px;cursor:pointer;
+    transition:border-color .12s,box-shadow .12s;display:flex;flex-direction:column;gap:5px;backdrop-filter:blur(4px)}
+  .cell.empty{background:transparent;border-color:transparent;cursor:default;backdrop-filter:none}
+  .cell:not(.empty):hover{border-color:rgba(255,255,255,.28)}
+  .cell .num{font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .cell.today{border-color:var(--amber);box-shadow:0 0 18px rgba(242,217,142,.18)}
+  .cell.today .num{color:var(--amber);font-weight:700}
+  .cell.sel{border-color:var(--fg)}
+  .cell .dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto}
+  .cell .dots i{width:9px;height:9px;border-radius:3px;display:block}
+  .cell .more{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .daypanel{margin-top:20px;border-top:1px solid var(--line);padding-top:16px}
+  .daypanel .dl{font-family:var(--mono);font-size:13.5px;letter-spacing:.06em;color:var(--muted);margin-bottom:11px}
+  .empty-day{color:var(--muted);font-size:15px;padding:12px 0}
+  .ggrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .gcard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px 14px 19px;
+    backdrop-filter:blur(6px);transition:border-color .12s,box-shadow .12s}
+  .gcard:hover{border-color:rgba(255,255,255,.24);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+  .gcard .gbar{position:absolute;left:0;top:13px;bottom:13px;width:4px;border-radius:3px;box-shadow:0 0 10px currentColor}
+  .gcard h4{font-size:16.5px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .kbadge{font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted)}
+  .kbadge.music{color:#C9A9FF;border-color:rgba(185,140,255,.45)}
+  .kbadge.party{color:#FF8FC2;border-color:rgba(255,91,168,.5)}
+  .kbadge.vip{color:var(--amber);border-color:rgba(242,217,142,.5)}
+  .gcard .rate{font-family:var(--mono);font-size:12.5px;color:var(--amber);font-weight:600;margin-left:auto}
+  .gcard .rate.none{color:var(--muted);font-weight:400}
+  .gcard .gmeta{font-size:13.5px;color:var(--muted);margin-top:6px}
+  .gcard .gmeta .ty{color:var(--fg);opacity:.85}
+  .gline{font-size:12.5px;margin-top:5px;display:flex;gap:8px;align-items:baseline}
+  .gline .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--muted);opacity:.7;min-width:26px;flex:none}
+  .gline .val{color:var(--fg);opacity:.85}
+  .gline a.val{color:var(--amber);text-decoration:none}
+  .gop{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:7px;line-height:1.45}
+  .gcard .gopen{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:8px;display:inline-block;background:var(--panel2);padding:3px 8px;border-radius:5px}
+  .addbar{margin-top:30px;border-top:1px dashed var(--line);padding-top:18px}
+  .addtoggle{font-family:var(--mono);font-size:13px;letter-spacing:.05em;color:var(--muted);background:none;border:0;cursor:pointer}
+  .addtoggle:hover{color:var(--fg)}
+  form.add{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+  form.add.open{display:grid}
+  form.add input,form.add select{background:var(--panel);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:11px 13px;font-size:15px;font-family:var(--sans);width:100%}
+  form.add .full{grid-column:1/-1}
+  form.add button{grid-column:1/-1;background:var(--fg);color:#0a0a0c;border:0;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer}
+  .hint{font-size:13px;color:var(--muted);margin-top:9px;line-height:1.55}
+  footer{margin-top:34px;font-size:12.5px;color:var(--muted);line-height:1.65;border-top:1px solid var(--line);padding-top:16px}
+  @media(prefers-reduced-motion:no-preference){.mark h1{animation:shine 7s linear infinite}}
+  @keyframes shine{to{background-position:220% center}}
+  @media(max-width:600px){html,body{font-size:15px}.mark h1{font-size:28px}.ggrid{grid-template-columns:1fr}.cell{min-height:62px}.ev{grid-template-columns:62px 1fr;gap:12px}form.add{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="mark">
+      <span class="latin">Seoul · Culture Board</span>
+      <h1>0.1% 익스클루시브 서울: 하이엔드 블링컬렉션 마스터맵</h1>
+      <span class="date" id="todayStamp"></span>
+    </div>
+    <div class="live">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="updbtn" id="updBtn"><span class="dot"></span>지금 업데이트</button>
+        <button class="autobtn" id="autoBtn" data-on="0">자동 OFF</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </header>
+  <div class="controls">
+    <div class="chips" id="chips"></div>
+    <div class="views">
+      <button data-v="agenda" data-on="1">리스트</button>
+      <button data-v="calendar">캘린더</button>
+      <button data-v="gallery">플레이스</button>
+      <button data-v="feed">소식 🔥</button>
+    </div>
+  </div>
+  <div class="cbanner" id="changeBanner">⚠️ 행사·클럽 정보는 자주 바뀌어요(특히 팝업·파티·멤버스). 방문 전 공식 채널 확인 필수 · ‘자동’ 켜두면 새 일정에 <b>NEW</b> 표시</div>
+  <div id="view"></div>
+  <div class="addbar" id="addbar">
+    <button class="addtoggle" id="addToggle">+ 내 일정 직접 추가 (파티·오프닝 등)</button>
+    <form class="add" id="addForm">
+      <input class="full" id="f_title" placeholder="행사 이름" required>
+      <select id="f_cat"><option value="전시">전시</option><option value="공연">공연</option><option value="파티" selected>파티·페스티벌</option><option value="화랑">화랑·갤러리</option></select>
+      <input id="f_area" placeholder="동네 (예: 성수)">
+      <input class="full" id="f_venue" placeholder="장소">
+      <input id="f_start" type="date" required>
+      <input id="f_end" type="date" placeholder="종료(선택)">
+      <button type="submit">추가하기</button>
+    </form>
+    <div class="hint" id="addHint"></div>
+  </div>
+  <footer>
+    ‘소식 🔥’ 탭은 깃허브 로봇이 1시간마다 네이버에서 자동 수집한 글이며, 앱(다운로드본 포함)을 열 때마다 자동으로 최신본을 불러옵니다.
+    전화·운영시간은 공개·확인된 곳만 표기했고(없으면 미표기), 상업 갤러리 시간은 변동될 수 있으니 방문 전 공식 채널 확인을 권합니다.
+  </footer>
+</div>
+
+<script>
+const CATS={'전시':{label:'전시',hex:'#FF6F45'},'공연':{label:'공연',hex:'#7C97FF'},'파티':{label:'파티·VIP',hex:'#FF5BA8'}};
+const REGIONS={'강남':{label:'강남·청담·압구정',hex:'#D9B45A'},'용산':{label:'용산·한남·이태원',hex:'#FF6F45'},'종로':{label:'종로·삼청·서촌',hex:'#7C97FF'},'성북':{label:'성북동',hex:'#3FCBAC'},'성수':{label:'성수동',hex:'#B98CFF'},'을지로':{label:'을지로·중구',hex:'#FF5BA8'},'평창':{label:'평창동',hex:'#5CC2E0'}};
+const KINDS=[['all','전체'],['art','갤러리·전시'],['music','음악·리스닝'],['party','파티·클럽'],['vip','프리미엄']];
+const KB={art:'갤러리',music:'음악·LP',party:'파티·클럽',vip:'프리미엄'};
+
+const SEED=[
+ // 진행중·예정 전시
+ {title:'데미안 허스트',cat:'전시',venue:'국립현대미술관 서울(MMCA)',area:'종로',start:'2026-03-20',end:'2026-06-28',note:'아시아 첫 대규모 개인전'},
+ {title:'유영국: 산은 내 안에 있다',cat:'전시',venue:'서울시립미술관 서소문본관',area:'중구',start:'2026-05-19',end:'2026-10-25',note:'한국 근대 거장전'},
+ {title:'다른 공간 안으로: 여성 작가들의 공감각적 환경',cat:'전시',venue:'리움미술관',area:'용산',start:'2026-05-05',end:'2026-11-29',note:'1956–1976'},
+ {title:'취향가옥 2: Art in Life',cat:'전시',venue:'디뮤지엄',area:'성수',start:'2025-06-28',end:'2026-09-20',note:''},
+ {title:'권병준: 내 마음속에 너는',cat:'전시',venue:'서울시립 북서울미술관',area:'노원',start:'2026-06-11',end:'2027-05-16',note:''},
+ {title:'보편타당한 당신 — 심이다은',cat:'전시',venue:'서울시립 북서울미술관',area:'노원',start:'2026-06-25',end:'2027-04-11',note:'예정'},
+ {title:'페르난도 보테로: 형태의 미학',cat:'전시',venue:'예술의전당 한가람미술관',area:'서초',start:'2026-04-24',end:'2026-08-30',note:''},
+ {title:'강철규: 버림받은 숙주',cat:'전시',venue:'아라리오갤러리 서울',area:'종로',start:'2026-05-09',end:'2026-06-20',note:'무료입장'},
+ {title:'아드리안 빌라 로하스: 타자의 언어',cat:'전시',venue:'아트선재센터',area:'종로',start:'2026-05-01',end:'2026-08-01',note:'조각 생태계'},
+ {title:'하루키를 말할 때 우리가 하고 싶은 이야기',cat:'전시',venue:'플랫폼엘',area:'강남',start:'2026-04-15',end:'2026-08-02',note:''},
+ {title:'왕의 서고, 어진 세상을 꿈꾸다',cat:'전시',venue:'국립중앙박물관',area:'용산',start:'2026-04-01',end:'2026-08-30',note:'외규장각 의궤'},
+ // 공연
+ {title:'마음을 담은 클래식 (6월)',cat:'공연',venue:'예술의전당',area:'서초',start:'2026-06-25',end:'2026-06-25',note:'11:00'},
+ {title:'국립무용단 〈몽유도원무〉',cat:'공연',venue:'국립극장',area:'중구',start:'2026-06-25',end:'2026-06-28',note:''},
+ {title:'연극 〈사소한 것들〉',cat:'공연',venue:'대학로극장 쿼드',area:'종로',start:'2026-06-19',end:'2026-06-28',note:'서울연극제'},
+ {title:'뮤지컬 〈베토벤〉',cat:'공연',venue:'EMK · 서울',area:'서울',start:'2026-06-01',end:'2026-08-30',note:'일정 확인 필요'},
+ // 파티·페스티벌
+ {title:'2026 서울 파크 뮤직 페스티벌',cat:'파티',venue:'올림픽공원 88잔디마당',area:'송파',start:'2026-06-20',end:'2026-06-21',note:'몬스타엑스·산다라박 등'},
+ {title:'차없는 잠수교 뚜벅뚜벅 축제',cat:'파티',venue:'잠수교',area:'서초',start:'2026-05-03',end:'2026-06-21',note:'매주 일요일'},
+ {title:'한강 불빛공연 드론 라이트쇼',cat:'파티',venue:'한강공원',area:'한강',start:'2026-06-01',end:'2026-06-30',note:'4~6월 주말'},
+ {title:'워터밤 서울 2026',cat:'파티',venue:'서울 (장소 추후)',area:'서울',start:'2026-07-24',end:'2026-07-26',note:'티켓 일찍 매진'},
+ {title:'서울아트위크 (프리즈·키아프 주간)',cat:'전시',venue:'코엑스·서울 전역',area:'서울',start:'2026-08-31',end:'2026-09-06',note:'VIP 프리뷰·갤러리 나잇'},
+ {title:'프리즈 서울 2026',cat:'전시',venue:'코엑스',area:'강남',start:'2026-09-02',end:'2026-09-05',note:'아트페어·VIP 프리뷰'},
+ {title:'프리즈 위크 갤러리 애프터파티',cat:'파티',venue:'청담·한남 갤러리/클럽',area:'서울',start:'2026-09-02',end:'2026-09-05',note:'VIP·컬렉터 프라이빗 파티'},
+ {title:'서울패션위크 2026 F/W',cat:'파티',venue:'DDP 동대문',area:'중구',start:'2026-10-13',end:'2026-10-17',note:'셀럽·인플루언서 파티 / 일정 확인'},
+ {title:'강남 클럽 NYE 카운트다운',cat:'파티',venue:'옥타곤·강남 클럽',area:'강남',start:'2026-12-31',end:'2026-12-31',note:'연말 VIP 테이블'},
+ {title:'서울 어텀 페스타 2026',cat:'파티',venue:'서울 전역',area:'서울',start:'2026-09-19',end:'2026-11-09',note:'가을 축제'},
+ // 지난 행사 (2026)
+ {title:'서울스프링페스타 2026',cat:'파티',venue:'여의도 한강공원',area:'영등포',start:'2026-04-30',end:'2026-05-05',note:'지난 축제'},
+ {title:'임재범 40주년 콘서트 (앵콜)',cat:'공연',venue:'올림픽홀',area:'송파',start:'2026-05-16',end:'2026-05-17',note:'지난 공연'},
+ {title:'제18회 서울재즈페스티벌',cat:'공연',venue:'올림픽공원',area:'송파',start:'2026-05-22',end:'2026-05-24',note:'지난 페스티벌'},
+ {title:'뷰티풀 민트 라이프 2026',cat:'파티',venue:'문화비축기지',area:'마포',start:'2026-05-30',end:'2026-05-31',note:'지난 페스티벌'},
+];
+
+const HQ='보통 화–일 10:00–18:00 · 월 휴관';
+const GALLERIES=[
+ // ── 강남·청담·압구정
+ {n:'갤러리원',r:'강남',t:'미술관',a:'압구정로71길 14',s:4.3,c:93,k:'art'},
+ {n:'이유진갤러리',r:'강남',t:'미술관',a:'압구정로77길 17',s:4.7,c:23,k:'art'},
+ {n:'갤러리 세인',r:'강남',t:'미술관',a:'청담동 76-6',s:4.8,c:8,k:'art',o:'수 11:00 오픈'},
+ {n:'김리아갤러리',r:'강남',t:'현대미술관',a:'청담동 100-31',s:4.7,c:22,k:'art',o:'수 11:00 오픈'},
+ {n:'갤러리더스페이스',r:'강남',t:'미술관',a:'학동로77길 34',s:4.2,c:27,k:'art'},
+ {n:'갤러리 508',r:'강남',t:'미술관',a:'도산대로67길 14 1층',s:4.4,c:8,k:'art'},
+ {n:'G Gallery 지갤러리',r:'강남',t:'미술관',a:'삼성로 748 B1',s:4.6,c:13,k:'art'},
+ {n:'Gladstone Gallery Seoul',r:'강남',t:'현대미술관',a:'삼성로 760',s:3.5,c:4,k:'art'},
+ {n:'갤러리 가이아',r:'강남',t:'미술관',a:'선릉로162길 43',s:4.6,c:7,k:'art'},
+ {n:'매스갤러리',r:'강남',t:'조각 미술관',a:'도산대로 420 청담스퀘어 B동',s:4.0,c:1,k:'art'},
+ {n:'청담 포브갤러리',r:'강남',t:'현대미술관',a:'삼성동 85-14',s:5.0,c:3,k:'art'},
+ {n:'필아트갤러리 청담',r:'강남',t:'미술관',a:'학동로67길 14 1층',s:5.0,c:1,k:'art'},
+ {n:'장갤러리',r:'강남',t:'미술관',a:'청담동 81-2',s:5.0,c:1,k:'art'},
+ {n:'갤러리B.',r:'강남',t:'미술관',a:'청담동 9-7',s:5.0,c:1,k:'art'},
+ {n:'아르세갤러리 (ARCE)',r:'강남',t:'현대미술관',a:'청담동 49-18',s:5.0,c:1,k:'art'},
+ {n:'쥴리아나갤러리',r:'강남',t:'전시',a:'선릉로162길 25',s:3.0,c:3,k:'art'},
+ {n:'청담갤러리',r:'강남',t:'갤러리',a:'청담동',s:3.6,c:13,k:'art'},
+ {n:'갤러리위 청담',r:'강남',t:'현대미술관',a:'청담동',s:0,c:0,k:'art'},
+ {n:'PKM 트리니티',r:'강남',t:'현대미술관',a:'청담동',s:0,c:0,k:'art'},
+ {n:'오페라갤러리 서울',r:'강남',t:'갤러리',a:'청담동',s:0,c:0,k:'art'},
+ {n:'313 아트프로젝트',r:'강남',t:'갤러리',a:'압구정로 313 부근',s:0,c:0,k:'art'},
+ {n:'박여숙화랑',r:'강남',t:'갤러리',a:'청담동',s:0,c:0,k:'art'},
+ {n:'표갤러리',r:'강남',t:'갤러리',a:'청담동',s:0,c:0,k:'art'},
+ {n:'호리아트스페이스',r:'강남',t:'갤러리',a:'청담동',s:0,c:0,k:'art'},
+ {n:'송은 (SongEun)',r:'강남',t:'전시·아트센터',a:'도산대로 441',s:0,c:0,k:'vip',o:'무료 · 월–토'},
+ {n:'호림박물관 신사',r:'강남',t:'박물관',a:'도산대로 317',s:0,c:0,k:'vip'},
+ {n:'K현대미술관 (KMCA)',r:'강남',t:'복합 전시',a:'압구정로 39길',s:0,c:0,k:'vip'},
+ {n:'아뜰리에 에르메스',r:'강남',t:'복합 전시공간',a:'메종 에르메스 도산파크',s:0,c:0,k:'vip'},
+ {n:'카펜터스 청담',r:'강남',t:'LP·뮤직바',a:'압구정로79길 17',s:0,c:0,k:'music',o:'대형 스피커 · 룸석'},
+ {n:'볼륨 엘피바',r:'강남',t:'LP바',a:'압구정',s:0,c:0,k:'music'},
+ {n:'트래픽',r:'강남',t:'LP바',a:'압구정',s:0,c:0,k:'music'},
+ {n:'게리슨',r:'강남',t:'LP바',a:'청담',s:0,c:0,k:'music'},
+ {n:'제플린 (Zeppelin)',r:'강남',t:'LP바',a:'신논현',s:0,c:0,k:'music'},
+ {n:'피터폴앤메리',r:'강남',t:'LP바',a:'압구정',s:0,c:0,k:'music'},
+ // ── 용산·한남·이태원
+ {n:'리움미술관',r:'용산',t:'미술관',a:'이태원로55길 60',s:0,c:0,k:'vip',h:'화–일 10:00–18:00 · 월 휴관',ex:'다른 공간 안으로 ~11.29'},
+ {n:'아모레퍼시픽미술관 (APMA)',r:'용산',t:'미술관',a:'한강대로 100 (신용산)',s:0,c:0,k:'vip'},
+ {n:'현대카드 스토리지',r:'용산',t:'전시공간',a:'이태원로 248',s:0,c:0,k:'vip'},
+ {n:'리만머핀 서울',r:'용산',t:'현대미술관',a:'한남동 (이태원로)',s:0,c:0,k:'art',o:'야외 테라스'},
+ {n:'타데우스 로팍 서울',r:'용산',t:'현대미술관',a:'독서당로 122-28 포트힐 2F',s:0,c:0,k:'art'},
+ {n:'페이스갤러리 서울',r:'용산',t:'현대미술관',a:'이태원로 267 르베이지빌딩',s:0,c:0,k:'art'},
+ {n:'가나아트 한남 / 나인원',r:'용산',t:'현대미술관',a:'한남대로 91 나인원한남',s:0,c:0,k:'art'},
+ {n:'갤러리바톤',r:'용산',t:'현대미술관',a:'한남동 독서당로',s:0,c:0,k:'art'},
+ {n:'P21',r:'용산',t:'현대미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'VSF (배럴서울)',r:'용산',t:'현대미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'파운드리 서울',r:'용산',t:'현대미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'디스위켄드룸',r:'용산',t:'현대미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'에스더 쉬퍼 서울',r:'용산',t:'현대미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'두아르트 스퀘이라',r:'용산',t:'현대미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'갤러리박 (BHAK)',r:'용산',t:'미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'디아 컨템포러리',r:'용산',t:'미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'갤러리 핌 (FIM)',r:'용산',t:'미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'갤더스 (GALLTHE’S)',r:'용산',t:'미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'라니 서울',r:'용산',t:'미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'뉴스프링프로젝트',r:'용산',t:'미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'마이어 리거 울프',r:'용산',t:'미술관',a:'한남동',s:0,c:0,k:'art'},
+ {n:'갤러리조은',r:'용산',t:'갤러리',a:'한남동',s:0,c:0,k:'art'},
+ {n:'현대카드 뮤직 라이브러리',r:'용산',t:'뮤직 라이브러리·바이닐',a:'이태원로 246',s:0,c:0,k:'music',o:'희귀 바이닐 1만장',op:'음악 덕후 인스타 성지 — 희귀 바이닐·바, 현대카드 회원 혜택 화제'},
+ {n:'스트라디움 (Stradeum)',r:'용산',t:'사운드 갤러리',a:'한남동',s:0,c:0,k:'music',o:'대형 음향 감상실'},
+ {n:'스테어웨이',r:'용산',t:'위스키·뮤직바',a:'이태원',s:0,c:0,k:'music'},
+ {n:'록시 (Roxy)',r:'용산',t:'LP바',a:'녹사평',s:0,c:0,k:'music'},
+ {n:'오프 더 레코드',r:'용산',t:'LP바',a:'이태원',s:0,c:0,k:'music'},
+ // ── 종로·삼청·서촌
+ {n:'국립현대미술관 서울',r:'종로',t:'국립 미술관',a:'삼청로 30 (소격동)',s:0,c:0,k:'art',p:'02-3701-9500',h:'10:00–18:00 · 수·토 ~21:00',ex:'데미안 허스트 ~6.28'},
+ {n:'국제갤러리',r:'종로',t:'현대미술관',a:'삼청로 54 (소격동)',s:0,c:0,k:'art',h:HQ},
+ {n:'갤러리현대',r:'종로',t:'현대미술관',a:'삼청로 8',s:0,c:0,k:'art',h:HQ},
+ {n:'PKM갤러리',r:'종로',t:'현대미술관',a:'삼청로7길 40',s:0,c:0,k:'art',h:HQ},
+ {n:'학고재',r:'종로',t:'미술관',a:'삼청로 50 (소격동)',s:0,c:0,k:'art',p:'02-736-0877',h:HQ},
+ {n:'아라리오갤러리 서울',r:'종로',t:'현대미술관',a:'율곡로 84 (원서동)',s:0,c:0,k:'art',h:HQ},
+ {n:'아라리오뮤지엄 인 스페이스',r:'종로',t:'미술관',a:'율곡로 83 (원서동)',s:0,c:0,k:'art'},
+ {n:'바라캇 컨템포러리',r:'종로',t:'현대미술관',a:'삼청로 36-1',s:0,c:0,k:'art',h:HQ},
+ {n:'금호미술관',r:'종로',t:'미술관',a:'삼청로 18',s:0,c:0,k:'art'},
+ {n:'아트선재센터',r:'종로',t:'미술관',a:'율곡로3길 87 (소격동)',s:0,c:0,k:'art',ex:'아드리안 빌라 로하스 ~8.1'},
+ {n:'일민미술관',r:'종로',t:'미술관',a:'세종대로 152 (광화문)',s:0,c:0,k:'art'},
+ {n:'대림미술관',r:'종로',t:'미술관',a:'자하문로4길 21 (통의동)',s:0,c:0,k:'art'},
+ {n:'리안갤러리 서울',r:'종로',t:'현대미술관',a:'창성동',s:0,c:0,k:'art'},
+ {n:'갤러리 시몬',r:'종로',t:'갤러리',a:'통의동',s:0,c:0,k:'art'},
+ {n:'진화랑',r:'종로',t:'갤러리',a:'통의동',s:0,c:0,k:'art'},
+ {n:'핑크갤러리',r:'종로',t:'미술관',a:'삼청로 71',s:0,c:0,k:'art',p:'070-8887-6388'},
+ {n:'서촌블루스',r:'종로',t:'LP바',a:'자하문로 (서촌)',s:0,c:0,k:'music',o:'신청곡'},
+ {n:'스탠바이미',r:'종로',t:'LP바',a:'서촌',s:0,c:0,k:'music'},
+ {n:'올드앤와이즈',r:'종로',t:'LP·뮤직바',a:'서촌',s:0,c:0,k:'music'},
+ {n:'슬로우핸드',r:'종로',t:'LP바',a:'서촌',s:0,c:0,k:'music'},
+ // ── 성북동
+ {n:'간송미술관',r:'성북',t:'미술관',a:'성북로 102-11',s:0,c:0,k:'art',o:'특별전 기간에만 개관'},
+ {n:'성북구립미술관',r:'성북',t:'미술관',a:'성북로 134',s:0,c:0,k:'art',p:'02-6925-5011',h:'10:00–18:00 · 월 휴관'},
+ {n:'한국가구박물관',r:'성북',t:'박물관 (예약제)',a:'성북동',s:0,c:0,k:'vip',o:'사전 예약 필수'},
+ {n:'우리옛돌박물관',r:'성북',t:'박물관',a:'성북동',s:0,c:0,k:'art'},
+ {n:'선잠박물관',r:'성북',t:'박물관',a:'성북로 17',s:0,c:0,k:'art'},
+ {n:'최만린미술관',r:'성북',t:'미술관',a:'성북동 (구립 분관)',s:0,c:0,k:'art'},
+ {n:'성북예술창작터',r:'성북',t:'복합공간',a:'성북동',s:0,c:0,k:'art'},
+ {n:'방식아트뮤지엄',r:'성북',t:'미술관',a:'성북동',s:0,c:0,k:'art',o:'플로리스트 박물관'},
+ {n:'최순우 옛집',r:'성북',t:'한옥·전시',a:'성북로15길 9',s:0,c:0,k:'art'},
+ {n:'리홀뮤직갤러리',r:'성북',t:'클래식 음악감상실',a:'성북동',s:0,c:0,k:'music',o:'하이파이로 듣는 클래식'},
+ // ── 성수동
+ {n:'디뮤지엄',r:'성수',t:'미술관',a:'성수동 (서울숲 인근)',s:0,c:0,k:'art',ex:'취향가옥 2 ~9.20'},
+ {n:'뚝섬미술관',r:'성수',t:'전시공간',a:'뚝섬역 3번 출구',s:0,c:0,k:'art'},
+ {n:'더페이지갤러리',r:'성수',t:'현대미술관',a:'성수동',s:0,c:0,k:'art'},
+ {n:'그라운드시소 성수',r:'성수',t:'전시공간',a:'성수동',s:0,c:0,k:'art'},
+ {n:'S팩토리',r:'성수',t:'전시·복합',a:'성수동',s:0,c:0,k:'art'},
+ {n:'성수연방',r:'성수',t:'복합문화공간',a:'성수동',s:0,c:0,k:'art'},
+ {n:'LCDC 서울',r:'성수',t:'복합문화공간',a:'성수동',s:0,c:0,k:'art'},
+ {n:'코사이어티',r:'성수',t:'복합 전시공간',a:'성수동',s:0,c:0,k:'art'},
+ {n:'LECT (렉트) 성수',r:'성수',t:'팝업·전시 복합공간',a:'연무장길 65',s:0,c:0,k:'art',o:'월별 팝업 로테이션'},
+ {n:'스탈릿 성수',r:'성수',t:'팝업 스페이스',a:'아차산로 104',s:0,c:0,k:'art',o:'팝업 로테이션'},
+ {n:'T Factory 성수',r:'성수',t:'복합 전시·팝업',a:'연무장1길 7-1',s:0,c:0,k:'art'},
+ {n:'쎈느 (Scene) 성수',r:'성수',t:'팝업 스페이스',a:'연무장길 88',s:0,c:0,k:'art'},
+ {n:'맵달 SEOUL 성수',r:'성수',t:'복합·뷰티 팝업',a:'성수동',s:0,c:0,k:'art'},
+ {n:'비이커 성수',r:'성수',t:'편집숍·전시',a:'연무장길 7-1',s:0,c:0,k:'art'},
+ {n:'성수동 팝업 (매달 변동)',r:'성수',t:'팝업 성지',a:'연무장길 일대',s:0,c:0,k:'art',o:'‘지금 업데이트’로 최신 확인',op:'성수동고릴라·팝가 등 SNS가 매일 업데이트 — 그날그날 다름'},
+ {n:'사운드플래닛',r:'성수',t:'LP바',a:'성수동',s:0,c:0,k:'music'},
+ {n:'음악창고',r:'성수',t:'LP바',a:'성수동',s:0,c:0,k:'music'},
+ // ── 을지로·중구
+ {n:'서울시립미술관 서소문본관',r:'을지로',t:'시립 미술관',a:'덕수궁길 61',s:0,c:0,k:'art',p:'02-2124-8800',h:'평일 10–20 · 주말 10–19 · 월 휴관',ex:'유영국: 산은 내 안에 있다 ~10.25'},
+ {n:'N/A (엔에이) 갤러리',r:'을지로',t:'신생 전시공간',a:'창경궁로5길 27',s:0,c:0,k:'art',h:'화–토 12:30–19:00'},
+ {n:'d/p (디피)',r:'을지로',t:'신생 전시공간',a:'을지로',s:0,c:0,k:'art'},
+ {n:'을지예술센터',r:'을지로',t:'복합 예술공간',a:'을지로',s:0,c:0,k:'art'},
+ {n:'신도시',r:'을지로',t:'복합 예술공간',a:'을지로',s:0,c:0,k:'art'},
+ {n:'space 413',r:'을지로',t:'전시공간',a:'을지로',s:0,c:0,k:'art'},
+ {n:'을지FM',r:'을지로',t:'LP바',a:'을지로',s:4.6,c:0,k:'music',op:'을지로 LP바 중 인스타 인증 많은 편 — 좁고 빈티지 무드'},
+ {n:'평균율',r:'을지로',t:'LP바·카페',a:'을지로',s:0,c:0,k:'music',o:'낮부터 영업'},
+ {n:'디엣지 서울',r:'을지로',t:'LP바',a:'을지로 (3F)',s:0,c:0,k:'music'},
+ {n:'선셋레코드',r:'을지로',t:'LP바',a:'을지로12길 11 2층',s:0,c:0,k:'music'},
+ {n:'콜트레인',r:'을지로',t:'위스키·뮤직바',a:'을지로',s:4.4,c:0,k:'music'},
+ {n:'클리크레코드',r:'을지로',t:'레코드숍·바',a:'을지로',s:0,c:0,k:'music',o:'DJ 파티'},
+ {n:'헬카페 뮤직',r:'을지로',t:'뮤직카페',a:'을지로',s:4.5,c:0,k:'music'},
+ // ── 평창동
+ {n:'가나아트센터',r:'평창',t:'현대미술관',a:'평창30길 28',s:0,c:0,k:'art',h:HQ,o:'국내 최대 규모'},
+ {n:'토탈미술관',r:'평창',t:'미술관',a:'평창동',s:0,c:0,k:'art'},
+ {n:'김종영미술관',r:'평창',t:'조각 미술관',a:'평창동',s:0,c:0,k:'art'},
+ {n:'상원미술관',r:'평창',t:'미술관',a:'평창동',s:0,c:0,k:'art'},
+ {n:'갤러리세줄',r:'평창',t:'갤러리',a:'평창동',s:0,c:0,k:'art'},
+ {n:'자하미술관',r:'평창',t:'미술관',a:'평창동',s:0,c:0,k:'art'},
+ {n:'키미아트 (KIMI)',r:'평창',t:'갤러리·카페',a:'평창동',s:0,c:0,k:'art'},
+ {n:'환기미술관',r:'평창',t:'미술관',a:'부암동 (인근)',s:0,c:0,k:'art'},
+ {n:'화정박물관',r:'평창',t:'박물관',a:'평창동',s:0,c:0,k:'art'},
+ {n:'영인문학관',r:'평창',t:'문학관·전시',a:'평창동',s:0,c:0,k:'art'},
+ {n:'그로리치화랑',r:'평창',t:'갤러리',a:'평창동',s:0,c:0,k:'art'},
+ {n:'아트스페이스 풀',r:'평창',t:'대안공간',a:'평창동',s:0,c:0,k:'art'},
+ // ── 나이트라이프 (VIP·클럽·프라이빗 파티)
+ {n:'클럽 옥타곤 (Octagon)',r:'강남',t:'클럽 · VIP라운지·풀',a:'논현로 645',p:'010-7328-8182',s:0,c:0,k:'party',o:'목–일 23:00–08:00',op:'관광·셀럽 유입 많음, ‘큰 무대·사운드’ 평 / 주말 웨이팅·입장료 호불호'},
+ {n:'디아드 청담 (DIAD)',r:'강남',t:'프라이빗 멤버십 클럽',a:'청담동 1',s:0,c:0,k:'party',o:'2026 오픈 예정 · 회원 한정',op:'스레드·뉴스에서 화제 — ‘돈만으론 못 들어가는 클럽’, 심사 기반'},
+ {n:'클럽 아레나 (Arena)',r:'강남',t:'대형 럭셔리 클럽',a:'청담·영동대로',s:0,c:0,k:'party',op:'VIP 테이블·보틀 중심의 클래식 강남 클럽'},
+ {n:'클럽 매스 (MASS)',r:'강남',t:'클럽 · 테크노/하우스',a:'강남 논현',s:0,c:0,k:'party',op:'언더그라운드 테크노 라인업 · 음악 매니아 선호'},
+ {n:'클럽 사운드 (SOUND)',r:'강남',t:'클럽 · 보틀·테이블',a:'청담',s:0,c:0,k:'party',op:'청담권 보틀 서비스 클럽'},
+ {n:'더 맨션 (THE MANSION)',r:'용산',t:'클럽 · VIP 보틀',a:'이태원',s:0,c:0,k:'party',op:'인스타 핫플 — VIP 보틀·드레스코드, 사진 잘 나오는 무드'},
+ {n:'케이크샵 (Cakeshop)',r:'용산',t:'언더그라운드 클럽',a:'이태원로',s:0,c:0,k:'party',op:'트위터·레딧 단골 추천 — ‘서울 일렉트로닉의 심장’, 라인업 보고 가는 곳'},
+ {n:'솝 서울 (Soap)',r:'용산',t:'하우스 클럽',a:'이태원',s:0,c:0,k:'party',o:'입장 ~2만원',op:'인스타·wanderseoul 호평 — 2026 부활, 사운드 좋고 하우스 매니아 모임'},
+ {n:'볼노스트 (Volnost)',r:'용산',t:'테크노 클럽',a:'한남·이태원',s:0,c:0,k:'party',op:'테크노 커뮤니티에서 ‘진짜 음악 듣는 곳’으로 회자'},
+ {n:'카펠라 레지던스 서울 클럽',r:'용산',t:'프라이빗 멤버십',a:'한남동',s:0,c:0,k:'vip',o:'입주·회원 대상',op:'타데우스 로팍 작품·박싱클럽·시그너처 라운지 (2025.10 오픈)'},
+ {n:'서울클럽',r:'을지로',t:'회원제 사교클럽',a:'장충동',s:0,c:0,k:'vip',op:'구한말 제물포구락부 계보의 전통 프라이빗 사교클럽'},
+ {n:'루프탑 라운지 (Privilege·KLOUD 등)',r:'을지로',t:'루프탑 바·라운지',a:'중구·한강뷰 (위치 확인)',s:0,c:0,k:'party',op:'야경·석양 명소 · 기념일/프라이빗 모임'},
+];
+
+let live=SEED.slice(), userEv=[], activeCat='all', activeRegion='all', activeKind='all', showPast=false;
+let viewMode='agenda', calMonth, calDay=null;
+const today=new Date(); today.setHours(0,0,0,0);
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const[a,b,c]=s.split('-').map(Number);const d=new Date(a,b-1,c);d.setHours(0,0,0,0);return d;};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function allEvents(){return live.concat(userEv).map(e=>({...e,end:e.end||e.start})).filter(e=>CATS[e.cat]);}
+const inCat=e=>activeCat==='all'||e.cat===activeCat;
+function fmtRange(e){const s=parse(e.start),en=parse(e.end);const f=d=>`${d.getMonth()+1}.${d.getDate()}`;return e.start===e.end?f(s):`${f(s)} – ${f(en)}`;}
+function statusOf(e){const s=parse(e.start),en=parse(e.end);if(en<today)return'past';if(s<=today&&today<=en)return'now';return'soon';}
+
+function buildChips(){
+  const c=$('#chips');
+  const mk=(k,label,hex,sel)=>{const on=sel===k?'1':'0';const sw=hex?`<span class="sw" style="background:${hex}"></span>`:'';
+    return `<button class="chip" data-k="${k}" data-on="${on}" ${hex&&on==='1'?`style="border-color:${hex};color:#fff"`:''}>${sw}${label}</button>`;};
+  if(viewMode==='gallery'){
+    c.innerHTML=mk('all','전체',null,activeRegion)+Object.entries(REGIONS).map(([k,v])=>mk(k,v.label,v.hex,activeRegion)).join('');
+    c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{activeRegion=b.dataset.k;buildChips();render();});
+  }else{
+    c.innerHTML=mk('all','전체',null,activeCat)+Object.entries(CATS).map(([k,v])=>mk(k,v.label,v.hex,activeCat)).join('');
+    c.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{activeCat=b.dataset.k;buildChips();render();});
+  }
+}
+function evCard(e){const v=CATS[e.cat],s=statusOf(e);
+  return `<div class="ev${s==='past'?' past':''}"><span class="tape" style="background:${v.hex};color:${v.hex}"></span>
+    <div class="when"><b>${fmtRange(e)}</b>${parse(e.start).getFullYear()}</div>
+    <div class="body"><h3>${esc(e.title)}</h3><div class="meta">${esc(e.venue||'')}</div>
+      <div class="tags"><span class="pill" style="background:${v.hex}">${v.label}</span>
+      ${e.area?`<span class="pill area">${esc(e.area)}</span>`:''}
+      ${e._new?'<span class="pill new">NEW</span>':''}${s==='now'?'<span class="pill now">진행중</span>':''}${s==='past'?'<span class="pill done">종료</span>':''}</div>
+      ${e.note?`<div class="note">${esc(e.note)}</div>`:''}</div></div>`;}
+function renderAgenda(){
+  const evs=allEvents().filter(inCat);
+  const now=evs.filter(e=>statusOf(e)==='now').sort((a,b)=>parse(a.end)-parse(b.end));
+  const soon=evs.filter(e=>statusOf(e)==='soon').sort((a,b)=>parse(a.start)-parse(b.start));
+  const past=evs.filter(e=>statusOf(e)==='past').sort((a,b)=>parse(b.end)-parse(a.end));
+  let h=`<div class="kindbar"><button id="pastToggle" data-on="${showPast?'1':'0'}">지난 일정 ${showPast?'숨기기':`보기 (${past.length})`}</button></div>`;
+  if(now.length)h+=`<div class="group-label">진행 중 · ${now.length}</div>`+now.map(evCard).join('');
+  if(soon.length)h+=`<div class="group-label">다가오는 · ${soon.length}</div>`+soon.map(evCard).join('');
+  if(showPast&&past.length)h+=`<div class="group-label">지난 (2026) · ${past.length}</div>`+past.map(evCard).join('');
+  if(!now.length&&!soon.length&&!(showPast&&past.length))h+='<div class="empty-day">조건에 맞는 행사가 없어요.</div>';
+  $('#view').innerHTML=h;
+  $('#pastToggle').onclick=()=>{showPast=!showPast;renderAgenda();};
+}
+function eventsOnDay(d){const t=d.getTime();return allEvents().filter(inCat).filter(e=>parse(e.start).getTime()<=t&&t<=parse(e.end).getTime());}
+function renderCalendar(){
+  const y=calMonth.getFullYear(),m=calMonth.getMonth();
+  const start=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  const dows=['일','월','화','수','목','금','토'];
+  let cells=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+  for(let i=0;i<start;i++)cells+='<div class="cell empty"></div>';
+  for(let day=1;day<=days;day++){const d=new Date(y,m,day),evs=eventsOnDay(d);
+    const isToday=ymd(d)===ymd(today),isSel=calDay&&ymd(d)===calDay;
+    const dots=evs.slice(0,4).map(e=>`<i style="background:${CATS[e.cat].hex}"></i>`).join('');
+    const more=evs.length>4?`<span class="more">+${evs.length-4}</span>`:'';
+    cells+=`<div class="cell${isToday?' today':''}${isSel?' sel':''}" data-d="${ymd(d)}"><span class="num">${day}</span><span class="dots">${dots}${more}</span></div>`;}
+  $('#view').innerHTML=`<div class="calhead"><button id="pm">‹</button><span class="m">${y}.${pad(m+1)}</span><button id="nm">›</button></div><div class="cal">${cells}</div><div class="daypanel" id="daypanel"></div>`;
+  $('#pm').onclick=()=>{calMonth=new Date(y,m-1,1);calDay=null;renderCalendar();};
+  $('#nm').onclick=()=>{calMonth=new Date(y,m+1,1);calDay=null;renderCalendar();};
+  $('#view').querySelectorAll('.cell:not(.empty)').forEach(c=>c.onclick=()=>{calDay=c.dataset.d;renderCalendar();});
+  renderDayPanel();
+}
+function renderDayPanel(){
+  const p=$('#daypanel');if(!p)return;
+  const inMonth=today.getMonth()===calMonth.getMonth()&&today.getFullYear()===calMonth.getFullYear();
+  if(!calDay&&!inMonth){p.innerHTML='<div class="dl">날짜를 누르면 그날 행사를 보여줘요.</div>';return;}
+  const d=calDay?parse(calDay):today,evs=eventsOnDay(d);
+  const lbl=`${d.getMonth()+1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]})`;
+  let h=`<div class="dl">${lbl} · ${evs.length}건</div>`;
+  h+=evs.length?evs.map(evCard).join(''):'<div class="empty-day">이 날 예정된 행사가 없어요.</div>';
+  p.innerHTML=h;
+}
+function gCard(g,hex){
+  const rate=g.s>0?`<span class="rate">★ ${g.s.toFixed(1)}${g.c>0?` <span style="color:var(--muted)">(${g.c})</span>`:''}</span>`:`<span class="rate none">평점 정보 없음</span>`;
+  let lines='';
+  if(g.h)lines+=`<div class="gline"><span class="lbl">시간</span><span class="val">${esc(g.h)}</span></div>`;
+  if(g.p)lines+=`<div class="gline"><span class="lbl">전화</span><a class="val" href="tel:${g.p.replace(/[^0-9+]/g,'')}">${esc(g.p)}</a></div>`;
+  if(g.ex)lines+=`<div class="gline"><span class="lbl">전시</span><span class="val">${esc(g.ex)}</span></div>`;
+  const buzz=g.op?`<div class="gop">“${esc(g.op)}”</div>`:'';
+  return `<div class="gcard"><span class="gbar" style="background:${hex};color:${hex}"></span>
+    <h4>${esc(g.n)} <span class="kbadge ${g.k}">${KB[g.k]}</span>${rate}</h4>
+    <div class="gmeta"><span class="ty">${esc(g.t)}</span> · ${esc(g.a)}</div>${lines}${buzz}
+    ${g.o?`<div class="gopen">${esc(g.o)}</div>`:''}</div>`;
+}
+function renderGallery(){
+  const regions=activeRegion==='all'?Object.keys(REGIONS):[activeRegion];
+  let h='<div class="kindbar">'+KINDS.map(([k,l])=>`<button data-k="${k}" data-on="${activeKind===k?'1':'0'}">${l}</button>`).join('')+'</div>';
+  h+='<div class="dirnote">※ 갤러리·화랑·바·파티·프리미엄을 한 곳에 모았어요. 전화·시간은 확인된 곳만 표기. 나이트라이프 한줄평은 레딧·wanderseoul·Noblesse 등 공개 글 참고이며 분위기는 요일·시기별로 달라요.</div>';
+  let total=0;
+  regions.forEach(rk=>{const v=REGIONS[rk];
+    const list=GALLERIES.filter(g=>g.r===rk&&(activeKind==='all'||g.k===activeKind));
+    if(!list.length)return;total+=list.length;
+    h+=`<div class="group-label"><span class="gbar" style="background:${v.hex};box-shadow:0 0 10px ${v.hex}"></span>${v.label} · ${list.length}곳</div>`;
+    h+='<div class="ggrid">'+list.map(g=>gCard(g,v.hex)).join('')+'</div>';});
+  if(!total)h+='<div class="empty-day">조건에 맞는 장소가 없어요.</div>';
+  $('#view').innerHTML=h;
+  $('#view').querySelectorAll('.kindbar button').forEach(b=>b.onclick=()=>{activeKind=b.dataset.k;renderGallery();});
+}
+function render(){
+  $('#addbar').style.display=(viewMode==='gallery'||viewMode==='feed')?'none':'';
+  if(viewMode==='agenda')renderAgenda();else if(viewMode==='calendar')renderCalendar();else if(viewMode==='gallery')renderGallery();else renderFeed();
+}
+// ===== 자동수집 소식(events.json) 연결 =====
+const FEED_URL='https://raw.githubusercontent.com/chperenniora/seoul-event-bot/main/events.json';
+let feed=[], feedState='idle'; // idle | loading | ok | err
+function fdate(s){ if(!s||s.length<8)return ''; return `${s.slice(0,4)}.${s.slice(4,6)}.${s.slice(6,8)}`; }
+async function loadFeed(force){
+  if(feedState==='loading')return;
+  if(feed.length&&!force)return;
+  feedState='loading'; if(viewMode==='feed')renderFeed();
+  try{
+    const res=await fetch(FEED_URL+'?t='+Date.now());
+    if(!res.ok)throw new Error('fetch '+res.status);
+    const arr=await res.json();
+    feed=Array.isArray(arr)?arr.filter(e=>e&&e.title&&e.link):[];
+    feedState='ok';
+  }catch(err){ feedState='err'; }
+  if(viewMode==='feed')renderFeed();
+}
+function renderFeed(){
+  let h='<div class="feednote">🔥 로봇이 20분마다 네이버에서 자동으로 모아온 서울 핫플·전시·파티 소식이에요. 블로그 원문은 ‘원문 보기’로 열려요. (정보는 블로거 개인 글이라 사실 확인은 원문에서 하세요)</div>';
+  if(feedState==='loading'&&!feed.length){ h+='<div class="empty-day">소식 불러오는 중…</div>'; $('#view').innerHTML=h; return; }
+  if(feedState==='err'&&!feed.length){ h+='<div class="empty-day">소식을 불러오지 못했어요. 인터넷 연결을 확인하고 ‘지금 업데이트’를 눌러보세요.</div>'; $('#view').innerHTML=h; return; }
+  if(!feed.length){ h+='<div class="empty-day">아직 모인 소식이 없어요.</div>'; $('#view').innerHTML=h; return; }
+  // 키워드별 그룹
+  const groups={};
+  feed.forEach(e=>{ const k=e.keyword||'기타'; (groups[k]=groups[k]||[]).push(e); });
+  // 최신순 정렬용
+  Object.keys(groups).forEach(k=>{
+    const list=groups[k];
+    h+=`<div class="fgroup">＃${esc(k)} <span class="cnt">${list.length}건</span></div>`;
+    list.slice(0,20).forEach(e=>{
+      const d=fdate(e.date);
+      h+=`<div class="fcard"><h4>${esc(e.title)}</h4>`
+       + (e.desc?`<div class="fdesc">${esc(e.desc)}</div>`:'')
+       + `<div class="fbot"><span class="fdate">${d?'🗓 '+d:''}</span>`
+       + `<a class="flink" href="${esc(e.link)}" target="_blank" rel="noopener">원문 보기 →</a></div></div>`;
+    });
+  });
+  $('#view').innerHTML=h;
+}
+document.querySelectorAll('.views button').forEach(b=>b.onclick=()=>{
+  viewMode=b.dataset.v;document.querySelectorAll('.views button').forEach(x=>x.dataset.on=x===b?'1':'0');buildChips();render();
+  if(viewMode==='feed')loadFeed(false);});
+$('#addToggle').onclick=()=>$('#addForm').classList.toggle('open');
+$('#addForm').onsubmit=async e=>{e.preventDefault();
+  const ev={title:$('#f_title').value.trim(),cat:$('#f_cat').value,area:$('#f_area').value.trim(),venue:$('#f_venue').value.trim(),start:$('#f_start').value,end:$('#f_end').value||$('#f_start').value,note:'내 일정'};
+  if(!ev.title||!ev.start)return;userEv.push(ev);$('#addForm').reset();$('#addForm').classList.remove('open');await save();render();$('#addHint').textContent='추가됐어요. (이 기기에 저장됩니다)';};
+async function save(){try{if(window.storage){const clean=live.map(({_new,...e})=>e);await window.storage.set('seoul_board_v5',JSON.stringify({userEv,live:clean,autoOn}),false);}}catch(_){}}
+async function load(){try{if(window.storage){const r=await window.storage.get('seoul_board_v5',false);if(r&&r.value){const o=JSON.parse(r.value);if(Array.isArray(o.userEv))userEv=o.userEv;if(Array.isArray(o.live)&&o.live.length)live=o.live;if(o.autoOn)autoOn=true;}}}catch(_){}}
+let autoTimer=null;
+function nowHM(){const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes());}
+async function doFetch(auto){
+  const btn=$('#updBtn'),st=$('#status');btn.disabled=true;btn.classList.add('spin');
+  st.className='status';st.textContent=auto?'자동 갱신 확인 중…':'웹에서 최신 행사 검색 중…';
+  try{
+    const sys=`You fetch live cultural events happening in Seoul. Use web search. Return ONLY a compact JSON array (no prose, no markdown). Each item: {"title":Korean,"cat":one of "전시"|"공연"|"파티","venue":Korean,"area":short Korean district,"start":"YYYY-MM-DD","end":"YYYY-MM-DD","note":short Korean}. "파티"=parties/festivals/club events. Max 14 items, prefer events current or newly added/upcoming from today (특히 새로 뜨거나 변동된 일정). Unknown date: estimate and put "확인필요" in note.`;
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2200,system:sys,
+        messages:[{role:"user",content:`오늘(${ymd(today)}) 기준 서울에서 새로 생기거나 진행 중인 전시·공연·파티 행사 14개를 JSON 배열로.`}],
+        tools:[{type:"web_search_20250305",name:"web_search"}]})});
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const a=text.indexOf('['),b=text.lastIndexOf(']');
+    if(a<0||b<0)throw new Error('형식 오류');
+    const arr=JSON.parse(text.slice(a,b+1)).filter(e=>e&&e.title&&CATS[e.cat]&&e.start);
+    if(!arr.length)throw new Error('결과 없음');
+    const oldTitles=new Set(live.map(e=>e.title));
+    let nu=0; arr.forEach(e=>{ if(!oldTitles.has(e.title)){e._new=true;nu++;} });
+    live=arr;calDay=null;await save();render();
+    st.className='status ok';
+    st.textContent=`${auto?'자동':'수동'} 업데이트 · ${nowHM()} · ${arr.length}건${nu?` · NEW ${nu}`:' · 변동 없음'}`;
+  }catch(err){
+    st.className='status err';
+    st.textContent=auto?`자동 갱신 실패 · ${nowHM()} (재시도 예정)`:'업데이트 실패 — 잠시 후 다시 시도하세요.';
+  }finally{btn.disabled=false;btn.classList.remove('spin');}
+}
+$('#updBtn').onclick=()=>{loadFeed(true);doFetch(false);};
+function setAuto(on){
+  autoOn=on;const ab=$('#autoBtn');ab.dataset.on=on?'1':'0';ab.textContent='자동 '+(on?'ON':'OFF');
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+  if(on){doFetch(true);loadFeed(true);autoTimer=setInterval(()=>{doFetch(true);loadFeed(true);},20*60*1000);}
+  save();
+}
+$('#autoBtn').onclick=()=>setAuto(!autoOn);
+(async function(){$('#todayStamp').textContent=ymd(today).replace(/-/g,'.')+' 기준';calMonth=new Date(today.getFullYear(),today.getMonth(),1);await load();buildChips();render();loadFeed(false);if(autoOn){autoOn=false;setAuto(true);}})();
+</script>
